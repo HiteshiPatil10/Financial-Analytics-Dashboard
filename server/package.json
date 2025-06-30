@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn ./src/server.ts",
-    "load-data": "ts-node src/scripts/loadTransactions.ts"
-  },
+  "start": "ts-node src/server.ts",
+  "dev": "ts-node-dev --respawn src/server.ts",
+  "load-data": "ts-node src/scripts/loadTransactions.ts",
+  "build": "echo 'No build needed for backend'"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

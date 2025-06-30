@@ -1,6 +1,5 @@
 import express from 'express';
 import authRoutes from './routes/authRoutes';
-import { createServer } from 'http';
 import mongoose   from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -10,12 +9,15 @@ import exportRoutes from './routes/exportRoutes';
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
-const httpServer = createServer(app);
 
 app.use(cors({
-  origin: 'http://localhost:8080', // Your frontend port
+  origin: [
+    'http://localhost:8080',                             // Local Dev
+    'https://financial-analytics-dashboard-gamma.vercel.app' // ✅ Your frontend deployed link
+  ],
   credentials: true,
 }));
+
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -27,6 +29,7 @@ app.use('/api/export', exportRoutes);
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Finance Analytics Server!');
+  
 });
 
 mongoose

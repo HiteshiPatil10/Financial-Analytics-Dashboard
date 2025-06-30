@@ -1,69 +1,109 @@
-# React + TypeScript + Vite
+# Finance Analytics Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend client for the Finance Analytics application, built with **React**, **TypeScript**, and **Vite**. It provides a modern UI for managing users, transactions, analytics, and CSV exports.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Modern dashboard UI with charts and analytics
+- User authentication (login/register)
+- Transaction management (CRUD)
+- CSV export functionality
+- Responsive design with Tailwind CSS and shadcn/ui components
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Radix UI](https://www.radix-ui.com/)
+- [ESLint](https://eslint.org/) for linting
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Getting Started
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### Prerequisites
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js (v18+ recommended)
+- (Optional) Bun for faster installs
+
+### Installation
+
+1. **Install dependencies:**
+   ```sh
+   npm install
+   # or
+   bun install
+   ```
+
+2. **Start the development server:**
+   ```sh
+   npm run dev
+   # or
+   bun run dev
+   ```
+
+   The app will be available at [http://localhost:5173](http://localhost:5173) by default.
+
+### Build for Production
+
+```sh
+npm run build
+# or
+bun run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Preview Production Build
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sh
+npm run preview
+# or
+bun run preview
 ```
+
+## Project Structure
+
+```
+client/
+  public/
+  src/
+    components/
+    context/
+    hooks/
+    lib/
+    pages/
+    utils/
+    App.tsx
+    main.tsx
+  index.html
+  package.json
+  tailwind.config.ts
+  tsconfig.json
+  vite.config.ts
+```
+
+## Linting
+
+This project uses ESLint with recommended settings for React and TypeScript. To run lint checks:
+
+```sh
+npm run lint
+```
+
+You can expand the ESLint configuration for stricter or more type-aware rules. See the [ESLint documentation](https://eslint.org/) or the comments in `eslint.config.js` for more details.
+
+## Environment Variables
+
+If your app needs to connect to a backend API, create a `.env` file in the root and add:
+
+```
+VITE_API_URL=http://localhost:3000
+```
+
+## License
+
+MIT
+
+---
+
+*This project was bootstrapped with [Vite](https://vitejs.dev/) and uses [shadcn/ui](https://ui.shadcn.com/) for UI

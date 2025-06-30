@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "axios": "^1.10.0"
+  },
+  "scripts": {
+  "load-data": "ts-node src/scripts/loadTransactions.ts"
+}
+}

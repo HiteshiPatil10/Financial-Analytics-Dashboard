@@ -11,8 +11,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from "react";
 
 export function DashboardHeader() {
+  const [user, setUser] = useState({ name: "", email: "" });
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const firstInitial = user?.name?.[0]?.toUpperCase() || "?";
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login"; // redirect to login
+  };
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4">

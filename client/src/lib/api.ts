@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API = axios.create({
   baseURL: 'https://finance-api-anns.onrender.com/api',
-  withCredentials: false,
+  withCredentials: true,
 });
 
 // Attach token if exists

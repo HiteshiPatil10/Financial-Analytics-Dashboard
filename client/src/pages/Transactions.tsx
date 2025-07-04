@@ -8,103 +8,105 @@ import { Input } from "@/components/ui/input";
 import { CSVExportDialog } from "@/components/CSVExportDialog";
 import { useEffect, useState } from "react";
 import { ExportColumn, ExportData } from "@/utils/csvExport";
-import API from "@/lib/api";
-
 
 const exportColumns: ExportColumn[] = [
-  { key: 'amount', label: 'Amount', selected: true },
-  { key: 'date', label: 'Date', selected: true },
-  { key: 'category', label: 'Category', selected: true },
-  { key: 'status', label: 'Status', selected: true },
-  { key: 'description', label: 'Description', selected: true },
-  { key: 'type', label: 'Type', selected: false },
-  { key: 'user', label: 'User', selected: false },
+  { key: "amount", label: "Amount", selected: true },
+  { key: "date", label: "Date", selected: true },
+  { key: "category", label: "Category", selected: true },
+  { key: "status", label: "Status", selected: true },
+  { key: "description", label: "Description", selected: true },
+  { key: "type", label: "Type", selected: false },
+  { key: "user", label: "User", selected: false },
 ];
 
 const Transactions = () => {
-   const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
-const [searchTerm, setSearchTerm] = useState("");
-const [sortBy, setSortBy] = useState<"date" | "amount" | "">("");
-const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-const [filterCategory, setFilterCategory] = useState("");
-const [filterStatus, setFilterStatus] = useState("");
-const [currentPage, setCurrentPage] = useState(1);
-const itemsPerPage = 10;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "">("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-useEffect(() => {
-  const fetchTransactions = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await API.get("/transactions", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setTransactions(res.data.transactions);
-    } catch (err) {
-      console.error("Error fetching transactions:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:3000/api/transactions", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        setTransactions(data.transactions || []);
+      } catch (err) {
+        console.error("Error fetching transactions:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchTransactions();
-}, []);
+    fetchTransactions();
+  }, []);
 
+  const filteredTransactions = transactions
+    .filter(
+      (txn) =>
+        txn.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        txn.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        txn.user_id.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter(
+      (txn) =>
+        (!filterCategory || txn.category === filterCategory) &&
+        (!filterStatus || txn.status === filterStatus)
+    );
 
-const filteredTransactions = transactions.filter((txn) =>
-  txn.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  txn.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  txn.status.toLowerCase().includes(searchTerm.toLowerCase())
-);
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+    if (!sortBy) return 0;
 
-const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-  if (!sortBy) return 0;
+    const aValue = sortBy === "amount" ? a.amount : new Date(a.date).getTime();
+    const bValue = sortBy === "amount" ? b.amount : new Date(b.date).getTime();
 
-  const aValue = sortBy === "amount" ? a.amount : new Date(a.date).getTime();
-  const bValue = sortBy === "amount" ? b.amount : new Date(b.date).getTime();
+    return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
+  });
 
-  return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
-});
+  const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
+  const paginatedTransactions = sortedTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
-const paginatedTransactions = sortedTransactions.slice(
-  (currentPage - 1) * itemsPerPage,
-  currentPage * itemsPerPage
-);
+  const exportData: ExportData[] = paginatedTransactions.map((transaction) => ({
+    amount: transaction.amount,
+    date: transaction.date,
+    category: transaction.category,
+    status: transaction.status,
+    description: transaction.description || "",
+    type: transaction.type || "",
+    user: transaction.user_id,
+  }));
 
-const exportData: ExportData[] = paginatedTransactions.map((transaction) => ({
-  amount: transaction.amount,
-  date: transaction.date,
-  category: transaction.category,
-  status: transaction.status,
-  description: transaction.description,
-  type: transaction.type,
-  user: transaction.user,
-}));
-
+  if (loading) return <div className="p-8 text-center">Loading transactions...</div>;
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
-        
         <div className="flex-1 flex flex-col overflow-hidden">
           <DashboardHeader />
-          
           <main className="flex-1 p-6 overflow-auto bg-gray-50">
             <div className="max-w-7xl mx-auto space-y-6">
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    Transactions
-                  </h1>
-                  <p className="text-gray-600">
-                    View and manage all your financial transactions.
-                  </p>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Transactions</h1>
+                  <p className="text-gray-600">View and manage all your financial transactions.</p>
                 </div>
-                <Button 
+                <Button
                   onClick={() => setExportDialogOpen(true)}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
@@ -120,13 +122,12 @@ const exportData: ExportData[] = paginatedTransactions.map((transaction) => ({
                     <div className="flex gap-2">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <Input 
-  placeholder="Search transactions..."
-  className="pl-10 w-64"
-  value={searchTerm}
-  onChange={(e) => setSearchTerm(e.target.value)}
-/>
-
+                        <Input
+                          placeholder="Search transactions..."
+                          className="pl-10 w-64"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                       </div>
                       <Button variant="outline" size="sm">
                         <Filter className="w-4 h-4 mr-2" />
@@ -138,61 +139,61 @@ const exportData: ExportData[] = paginatedTransactions.map((transaction) => ({
                       </Button>
                     </div>
                   </div>
-                  <select
-  value={filterCategory}
-  onChange={(e) => setFilterCategory(e.target.value)}
-  className="p-2 border rounded text-sm"
->
-  <option value="">All Categories</option>
-  {Array.from(new Set(transactions.map((t) => t.category))).map((cat) => (
-    <option key={cat} value={cat}>
-      {cat}
-    </option>
-  ))}
-</select>
 
-<select
-  value={filterStatus}
-  onChange={(e) => setFilterStatus(e.target.value)}
-  className="p-2 border rounded text-sm"
->
-  <option value="">All Status</option>
-  {Array.from(new Set(transactions.map((t) => t.status))).map((status) => (
-    <option key={status} value={status}>
-      {status}
-    </option>
-  ))}
-</select>
+                  <div className="flex gap-4 mt-4">
+                    <select
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                      className="p-2 border rounded text-sm"
+                    >
+                      <option value="">All Categories</option>
+                      {Array.from(new Set(transactions.map((t) => t.category))).map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
 
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="p-2 border rounded text-sm"
+                    >
+                      <option value="">All Status</option>
+                      {Array.from(new Set(transactions.map((t) => t.status))).map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </CardHeader>
+
                 <CardContent>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200">
                           <th
-  className="text-left py-3 px-4 font-medium text-gray-700 cursor-pointer"
-  onClick={() => {
-    setSortBy("date");
-    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-  }}
->
-  Date <ArrowUpDown className="inline w-4 h-4" />
-</th>
-<th
-  className="text-right py-3 px-4 font-medium text-gray-700 cursor-pointer"
-  onClick={() => {
-    setSortBy("amount");
-    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-  }}
->
-  Amount <ArrowUpDown className="inline w-4 h-4" />
-</th>
-
-                          <th className="text-left py-3 px-4 font-medium text-gray-700">Date</th>
+                            className="text-left py-3 px-4 font-medium text-gray-700 cursor-pointer"
+                            onClick={() => {
+                              setSortBy("date");
+                              setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                            }}
+                          >
+                            Date <ArrowUpDown className="inline w-4 h-4" />
+                          </th>
+                          <th
+                            className="text-right py-3 px-4 font-medium text-gray-700 cursor-pointer"
+                            onClick={() => {
+                              setSortBy("amount");
+                              setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                            }}
+                          >
+                            Amount <ArrowUpDown className="inline w-4 h-4" />
+                          </th>
                           <th className="text-left py-3 px-4 font-medium text-gray-700">Description</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-700">Category</th>
-                          <th className="text-right py-3 px-4 font-medium text-gray-700">Amount</th>
                           <th className="text-center py-3 px-4 font-medium text-gray-700">Status</th>
                         </tr>
                       </thead>
@@ -200,24 +201,26 @@ const exportData: ExportData[] = paginatedTransactions.map((transaction) => ({
                         {paginatedTransactions.map((transaction) => (
                           <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
                             <td className="py-3 px-4 text-sm text-gray-600">{transaction.date}</td>
+                            <td className={`py-3 px-4 text-right font-semibold ${transaction.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                              {transaction.amount < 0 ? '-' : '+'}${Math.abs(transaction.amount).toFixed(2)}
+                            </td>
                             <td className="py-3 px-4">
-                              <div className="font-medium text-gray-900">{transaction.description}</div>
+                              <div className="font-medium text-gray-900">
+                                {transaction.description || "—"}
+                              </div>
                             </td>
                             <td className="py-3 px-4">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                 {transaction.category}
                               </span>
                             </td>
-                            <td className={`py-3 px-4 text-right font-semibold ${
-                              transaction.amount < 0 ? 'text-red-600' : 'text-green-600'
-                            }`}>
-                              {transaction.amount < 0 ? '-' : '+'}${Math.abs(transaction.amount).toFixed(2)}
-                            </td>
                             <td className="py-3 px-4 text-center">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                transaction.status === 'completed' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-blue-100 text-blue-800'
+                                transaction.status === "Paid"
+                                  ? "bg-green-100 text-green-800"
+                                  : transaction.status === "Pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-gray-100 text-gray-800"
                               }`}>
                                 {transaction.status}
                               </span>
@@ -226,60 +229,38 @@ const exportData: ExportData[] = paginatedTransactions.map((transaction) => ({
                         ))}
                       </tbody>
                     </table>
+
                     <div className="mt-6 flex justify-center items-center gap-2">
-  <Button
-    size="sm"
-    variant="outline"
-    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-    disabled={currentPage === 1}
-  >
-    Previous
-  </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
 
-  {[...Array(totalPages)].map((_, index) => (
-    <Button
-      key={index}
-      size="sm"
-      variant={currentPage === index + 1 ? "default" : "outline"}
-      onClick={() => setCurrentPage(index + 1)}
-    >
-      {index + 1}
-    </Button>
-  ))}
+                      {[...Array(totalPages)].map((_, index) => (
+                        <Button
+                          key={index}
+                          size="sm"
+                          variant={currentPage === index + 1 ? "default" : "outline"}
+                          onClick={() => setCurrentPage(index + 1)}
+                        >
+                          {index + 1}
+                        </Button>
+                      ))}
 
-  <Button
-    size="sm"
-    variant="outline"
-    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-    disabled={currentPage === totalPages}
-  >
-    Next
-  </Button>
-</div>
-
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex justify-end mt-4 gap-2">
-  <Button
-    variant="outline"
-    size="sm"
-    disabled={currentPage === 1}
-    onClick={() => setCurrentPage((prev) => prev - 1)}
-  >
-    Previous
-  </Button>
-  <span className="text-sm text-gray-600 mt-1">
-    Page {currentPage} of {totalPages}
-  </span>
-  <Button
-    variant="outline"
-    size="sm"
-    disabled={currentPage === totalPages}
-    onClick={() => setCurrentPage((prev) => prev + 1)}
-  >
-    Next
-  </Button>
-</div>
-
                 </CardContent>
               </Card>
             </div>
@@ -288,14 +269,13 @@ const exportData: ExportData[] = paginatedTransactions.map((transaction) => ({
       </div>
 
       <CSVExportDialog
-  open={exportDialogOpen}
-  onOpenChange={setExportDialogOpen}
-  data={exportData}
-  availableColumns={exportColumns}
-  defaultFilename="filtered-transactions"
-  title="Filtered Transactions"
-/>
-
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        data={exportData}
+        availableColumns={exportColumns}
+        defaultFilename="filtered-transactions"
+        title="Filtered Transactions"
+      />
     </SidebarProvider>
   );
 };

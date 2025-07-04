@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
 
-const filePath = path.join(__dirname, "../../transactions.json");
+const filePath = path.join(__dirname, "transactions.json");
 
 const readTransactions = () => JSON.parse(fs.readFileSync(filePath, "utf-8"));
 const writeTransactions = (data: any[]) => fs.writeFileSync(filePath, JSON.stringify(data, null, 2));

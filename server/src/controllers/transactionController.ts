@@ -1,118 +1,74 @@
-import { Request, Response } from 'express';
-import Transaction from '../models/Transaction';
+import { Request, Response } from "express";
+import fs from "fs";
+import path from "path";
+
+const filePath = path.join(__dirname, "../../transactions.json");
+
+const readTransactions = () => JSON.parse(fs.readFileSync(filePath, "utf-8"));
+const writeTransactions = (data: any[]) => fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+
+export const getTransactions = async (req: Request, res: Response) => {
+  const userId = req.user?.userid;
+  const transactions = readTransactions();
+  const userTransactions = transactions.filter((txn: { user_id: string | undefined; }) => txn.user_id === userId);
+  res.json({ transactions: userTransactions });
+};
 
 export const createTransaction = async (req: Request, res: Response) => {
-  const { type, category, amount, date, description } = req.body;
+  const userId = req.user?.userid;
+  const transactions = readTransactions();
 
-  const newTransaction = await Transaction.create({
-    user: req.user?.userid,
-    type,
-    category,
-    amount,
-    date,
-    description,
-  });
+  const newTransaction = {
+    id: Date.now(),
+    ...req.body,
+    user_id: userId,
+  };
 
+  transactions.push(newTransaction);
+  writeTransactions(transactions);
   res.status(201).json(newTransaction);
 };
 
-export const getTransactions = async (req: Request, res: Response) => {
-  const {
-    page = 1,
-    limit = 10,
-    sortBy = 'createdAt',
-    order = 'desc',
-    search = '',
-    status,
-    category,
-    minAmount,
-    maxAmount,
-    fromDate,
-    toDate,
-  } = req.query;
-
-  const query: any = {
-    user: req.user?.userid // ✅ Filter to user's data only
-  };
-
-  
-
-  if (search) {
-    query.$or = [
-      { description: { $regex: search, $options: 'i' } },
-      { category: { $regex: search, $options: 'i' } },
-      { status: { $regex: search, $options: 'i' } }
-    ];
-  }
-
-  if (status) query.status = status;
-  if (category) query.category = category;
-  if (minAmount) query.amount = { ...query.amount, $gte: Number(minAmount) };
-  if (maxAmount) query.amount = { ...query.amount, $lte: Number(maxAmount) };
-  if (fromDate) query.date = { ...query.date, $gte: new Date(fromDate as string) };
-  if (toDate) query.date = { ...query.date, $lte: new Date(toDate as string) };
-
-  const skip = (Number(page) - 1) * Number(limit);
-  const sortOptions: any = { [sortBy as string]: order === 'asc' ? 1 : -1 };
-
-  const [transactions, total] = await Promise.all([
-    Transaction.find(query).sort(sortOptions).skip(skip).limit(Number(limit)),
-    Transaction.countDocuments(query)
-  ]);
-
-  res.json({
-    total,
-    page: Number(page),
-    pageSize: Number(limit),
-    transactions
-  });
-};
-export const getTransactionById = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  const transaction = await Transaction.findOne({ _id: id, user: req.user?.userid });
-
-  if (!transaction) {
-    return res.status(404).json({ message: 'Transaction not found' });
-  }
-
-  res.json(transaction);
-};
-export const deleteTransaction = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  try {
-    const deleted = await Transaction.findOneAndDelete({ _id: id, user: req.user?.userid });
-
-    if (!deleted) {
-      return res.status(404).json({ message: 'Transaction not found' });
-    }
-
-    res.json({ message: 'Transaction deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error deleting transaction' });
-  }
-};
-
-
 export const updateTransaction = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const updates = req.body;
+  const userId = req.user?.userid;
+  const transactions = readTransactions();
+  const index = transactions.findIndex((t: { id: string; user_id: string | undefined; }) => t.id == id && t.user_id === userId);
 
-  try {
-    const updated = await Transaction.findOneAndUpdate(
-      { _id: id, user: req.user?.userid },
-      updates,
-      { new: true }
-    );
+  if (index === -1) return res.status(404).json({ error: "Transaction not found" });
 
-    if (!updated) {
-      return res.status(404).json({ message: 'Transaction not found' });
-    }
-
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ message: 'Error updating transaction' });
-  }
+  transactions[index] = { ...transactions[index], ...req.body };
+  writeTransactions(transactions);
+  res.json(transactions[index]);
 };
 
+export const deleteTransaction = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.userid;
+  const transactions = readTransactions();
+  const newList = transactions.filter((t: { id: string; user_id: string | undefined; }) => !(t.id == id && t.user_id === userId));
+
+  if (newList.length === transactions.length) return res.status(404).json({ error: "Transaction not found" });
+
+  writeTransactions(newList);
+  res.status(204).send();
+};
+
+export const getTransactionById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.userid;
+  const transactions = readTransactions();
+  const transaction = transactions.find((t: { id: string; user_id: string | undefined; }) => t.id == id && t.user_id === userId);
+  if (!transaction) return res.status(404).json({ error: "Transaction not found" });
+  res.json(transaction);
+};
+export const exportTransactions = async (req: Request, res: Response) => {
+  const userId = req.user?.userid;
+  const transactions = readTransactions();
+  const userTransactions = transactions.filter((txn: { user_id: string | undefined; }) => txn.user_id === userId);
+
+  const csvContent = userTransactions.map((txn: any) => Object.values(txn).join(",")).join("\n");
+  res.header("Content-Type", "text/csv");
+  res.attachment("transactions.csv");
+  res.send(csvContent);
+};

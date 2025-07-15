@@ -18,6 +18,15 @@ app.use(cors({
   credentials: true,
 }));
 
+app.options('*', cors({
+  origin: [
+    'http://localhost:8080',
+    'https://financial-analytics-dashboard-gamma.vercel.app'
+  ],
+  credentials: true,
+}));
+
+
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
